@@ -53,3 +53,15 @@ sentence_with_variation <- function(sent_list,var){
   return(sent_var)
 }
 
+sentence_with_mutat <- function(sent_list){
+  
+  sent_mut <- list()
+  
+  for(k in 1:length(sent_list)){
+    if(grepl('\\s(mutat)',sent_list[[k]])){
+      sent_mut <- c(sent_mut,sent_list[[k]])
+    }
+  }
+  
+  return(sent_mut)
+}
