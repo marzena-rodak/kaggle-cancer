@@ -82,12 +82,8 @@ dtm.4g <- DocumentTermMatrix(txt, control=list(tokenize=FourgramTokenizer,weight
 
 
 # Variation distance analysis ------------------------------------------------------
-var <- levels(data$Variation)
-distance_var <- stringdistmatrix(var,var,method = "osa")
-rownames(distance_var) <- var
-hc <- hclust(as.dist(distance_var))
-plot(hc)
-rect.hclust(hc,k=20)
+
+
 
 sum_var <- train %>% group_by(Variation) %>% summarize(count = n()) %>% filter(count > 2) %>% arrange(-count)
 x <- train[train[,'Variation'] %in% sum_var$Variation, c('Variation','Class')] %>% group_by(Variation, Class) %>% summarize(count = n())

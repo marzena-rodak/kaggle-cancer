@@ -34,3 +34,22 @@ removeReferences <-function(x){
   x <- gsub('[A-z0-9]+[}]','',x)
   return(x)
 }
+
+catch_mutation_grams <- function(sentence){
+  x <- regmatches(sentence,gregexpr('\\w+\\s(mutation)',sentence))
+  return(x)
+}
+
+sentence_with_variation <- function(sent_list,var){
+  
+  sent_var <- list()
+  
+  for(k in 1:length(sent_list)){
+    if(grepl(var,sent_list[[k]])){
+      sent_var <- c(sent_var,sent_list[[k]])
+    }
+  }
+  
+  return(sent_var)
+}
+
