@@ -35,7 +35,6 @@ removeReferences <-function(x){
   return(x)
 }
 
-<<<<<<< Updated upstream
 catch_mutation_grams <- function(sentence){
   x <- regmatches(sentence,gregexpr('\\w+\\s(mutation)',sentence))
   return(x)
@@ -65,7 +64,8 @@ sentence_with_mutat <- function(sent_list){
   }
   
   return(sent_mut)
-=======
+}
+
 convert_text_to_sentences <- function(text, lang = "en") {
   # Ensure there are spaces after each dot.
   text <- stripWhitespace(gsub('\\.', '. ', text))
@@ -115,5 +115,4 @@ LogLossSummary <- function (data, lev = NULL, model = NULL) {
   names(out) <- c("Accuracy", "Kappa", "LogLoss")
   if (any(is.nan(out))) out[is.nan(out)] <- NA
   out
->>>>>>> Stashed changes
 }
