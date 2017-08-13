@@ -35,6 +35,7 @@ removeReferences <-function(x){
   return(x)
 }
 
+<<<<<<< Updated upstream
 catch_mutation_grams <- function(sentence){
   x <- regmatches(sentence,gregexpr('\\w+\\s(mutation)',sentence))
   return(x)
@@ -64,4 +65,55 @@ sentence_with_mutat <- function(sent_list){
   }
   
   return(sent_mut)
+=======
+convert_text_to_sentences <- function(text, lang = "en") {
+  # Ensure there are spaces after each dot.
+  text <- stripWhitespace(gsub('\\.', '. ', text))
+  
+  # Function to compute sentence annotations using the Apache OpenNLP Maxent sentence detector employing the default model for language 'en'. 
+  sentence_token_annotator <- Maxent_Sent_Token_Annotator(language = lang)
+  
+  # Convert text to class String from package NLP
+  text <- as.String(text)
+  
+  # Sentence boundaries in text
+  sentence.boundaries <- annotate(text, sentence_token_annotator)
+  
+  # Extract sentences
+  sentences <- text[sentence.boundaries]
+  
+  # return sentences
+  return(sentences)
+}
+
+LogLossSummary <- function (data, lev = NULL, model = NULL) {
+  LogLos <- function(actual, pred, eps = 1e-15) {
+    stopifnot(all(dim(actual) == dim(pred)))
+    pred[pred < eps] <- eps
+    pred[pred > 1 - eps] <- 1 - eps
+    -sum(actual * log(pred)) / nrow(pred) 
+  }
+  if (is.character(data$obs)) data$obs <- factor(data$obs, levels = lev)
+  pred <- data[, "pred"]
+  obs <- data[, "obs"]
+  isNA <- is.na(pred)
+  pred <- pred[!isNA]
+  obs <- obs[!isNA]
+  data <- data[!isNA, ]
+  cls <- levels(obs)
+  if (length(obs) + length(pred) == 0) {
+    out <- rep(NA, 2)
+  } else {
+    pred <- factor(pred, levels = levels(obs))
+    require("e1071")
+    out <- unlist(e1071::classAgreement(table(obs, pred)))[c("diag", "kappa")]
+    probs <- data[, cls]
+    actual <- model.matrix(~ obs - 1)
+    out2 <- LogLos(actual = actual, pred = probs)
+  }
+  out <- c(out, out2)
+  names(out) <- c("Accuracy", "Kappa", "LogLoss")
+  if (any(is.nan(out))) out[is.nan(out)] <- NA
+  out
+>>>>>>> Stashed changes
 }

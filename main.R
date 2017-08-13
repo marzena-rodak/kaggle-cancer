@@ -1,11 +1,14 @@
 # Install and load libraries ----------------------------------------------
-library(data.table)
+# install.packages("openNLPmodels.en", repos = "http://datacube.wu.ac.at/", type = "source")
+library(caret) ### IMPORTANT! Load caret before NLP; `annotate` from NLP is masked.
+library(NLP)
+library(openNLP)
 library(tm)
-library(SnowballC)
-library(caret)
-library(xgboost)
 library(RTextTools)
 library(RWeka)
+library(data.table)
+library(SnowballC)
+library(xgboost)
 library(stringdist)
 library(dplyr)
 source('functions.R')
