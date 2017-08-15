@@ -13,6 +13,8 @@ library(stringdist)
 library(dplyr)
 library(slam)
 source('functions.R')
+library(foreach)
+library(doParallel)
 
 # Load data ---------------------------------------------------------------
 
@@ -151,31 +153,91 @@ train$is_splice <- ifelse(grepl("splice", train$Variation, ignore.case = T), 1, 
 train$is_exon <- ifelse(grepl("exon", train$Variation, ignore.case = T), 1, 0)
 
 
+
+
+
+######Building dtm separetly from smaller number of sentences
+
+#sub_train_full <- train[!is.na(train$First_Var),]
+
+index <- createDataPartition(train$Class, times = 1, p=0.01, list = FALSE)
+sub_train <- train[index,]
+
+
 # Gene variation extraction -----------------------------------------------
-train$First_Var<-NA
-r <-regexpr('[A-Z0-9]{2,}', train$Variation)
-train$First_Var[r!=-1] <- regmatches(train$Variation,r)
+subtrain_Var<-list()
 
-#Building dtm separetly from smaller number of sentences
+mut_vec<-c("delet","insert",'fusion',"truncat","methyl","amplif","silenc","express","splic","exon")
+pom_Var<- apply(sub_train[,c("is_del","is_ins","is_fus","is_trunc","is_methyl","is_amp","is_sil","is_expr","is_splice","is_exon")],
+                1, function(x) mut_vec[x==1])
 
-gene_doc_list <- list()
-var_doc_list <- list()
+r <-gregexpr('[A-Z0-9]{2,}', sub_train$Variation)
 
-for(p in 1:nrow(train)){
-  text <- train$Text[p]
-  sent <- convert_text_to_sentences(text)
-  sent_gene <- sentence_with_keyword(sent,train$Gene[p])
-  sent_var <- sentence_with_keyword(sent, train$First_Var[p])
-  gene_doc_list[p] <- paste(sent_gene, collapse=" ")
-  var_doc_list[p] <- paste(sent_var, collapse=" ")
+for(j in 1:nrow(sub_train)){
+  # if(r[[j]][1]!=-1){
+    subtrain_Var[[j]] <- c(regmatches(sub_train$Variation[j],r[j])[[1]], pom_Var[[j]])
+  # }
 }
 
-gene_txt <- preprocess_Corpus(gene_doc_list)
-var_txt <- preprocess_Corpus(var_doc_list)
+cl <- makeCluster(4)
+registerDoParallel(cl)
 
-#Build even smaller dtm using NCLt dictionary
+gene_doc_list = foreach(p = 1:nrow(sub_train),.packages = c("NLP","openNLP","tm")) %dopar% {
+  print(p)
+  text <- sub_train$Text[p]
+  sent <- convert_text_to_sentences(text)
+  sent_gene <- sentence_with_keyword(sent,sub_train$Gene[p])
+  paste(sent_gene, collapse=" ")
+}
+
+var_doc_list = foreach(p = 1:nrow(sub_train),.packages = c("NLP","openNLP","tm")) %dopar% {
+  print(p)
+  text <- sub_train$Text[p]
+  sent <- convert_text_to_sentences(text)
+  sent_var <- sentence_with_keyword(sent, subtrain_Var[[p]])
+  paste(sent_var, collapse=" ")
+}
+
+stopCluster(cl)
+
+gene_txt <- preprocess_Corpus(gene_doc_list)
+gene_txt <- tm_map(gene_txt, PlainTextDocument)
+var_txt <- preprocess_Corpus(var_doc_list)
+var_txt <- tm_map(var_txt, PlainTextDocument)
+
+#One-gram term matrix
+gene_dtm <- DocumentTermMatrix(gene_txt, control = list(weighting = weightTfIdf))
+gene_dtm <- removeSparseTerms(gene_dtm, 0.95)
+
+var_dtm <- DocumentTermMatrix(var_txt, control = list(weighting = weightTfIdf))
+var_dtm <- removeSparseTerms(var_dtm, 0.95)
+
+#Bigram term matrix
+gene_dtm_2 <- DocumentTermMatrix(gene_txt, control=list(tokenize=BigramTokenizer, wordLengths = c(1, Inf)))
+gene_dtm_2 <- removeSparseTerms(gene_dtm_2, 0.95)
+
+var_dtm_2 <- DocumentTermMatrix(var_txt, control=list(tokenize=BigramTokenizer, wordLengths = c(1, Inf)))
+var_dtm_2 <- removeSparseTerms(var_dtm_2, 0.95)
+
+gene_dtm_comb <- c(gene_dtm,gene_dtm_2)
+var_dtm_comb <- c(var_dtm,var_dtm_2)
+
+#######Build even smaller dtm using NCLt dictionary
+
+#One-gram term matrix
+nci_gene_dtm <- DocumentTermMatrix(gene_txt, control = list(dictionary = medDico, weighting = weightTfIdf))
+nci_gene_dtm <- removeSparseTerms(nci_gene_dtm, 0.95)
+
+nci_var_dtm <- DocumentTermMatrix(var_txt, control = list(dictionary = medDico, weighting = weightTfIdf))
+nci_var_dtm <- removeSparseTerms(nci_var_dtm, 0.95)
+
 
 
 # NCI Thesaurus -----------------------------------------------------------
 
 medDico <- getDictionary("Data/Thesaurus.txt")
+
+text <- sub_train$Text[empty_gene[1]]
+key <- sub_train$Gene[empty_gene[1]]
+sub_train$ID[empty_gene[1]]
+sub_train$ID[empty_var]

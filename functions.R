@@ -61,7 +61,7 @@ sentence_with_keyword <- function(sent_list,keyword){
   
   if( !is.na(keyword) ){
     for(k in 1:length(sent_list)){
-      if(grepl(keyword,sent_list[[k]])){
+      if(grepl(paste0("(",paste(keyword,collapse="|"),")"), sent_list[[k]], ignore.case = TRUE)){
         sent_keyword <- c(sent_keyword,sent_list[[k]])
       }
     }
@@ -146,6 +146,7 @@ processCorpus <- function (corpus) {
   corpus <- tm_map(corpus, removeWords, stopwords("english")) 
   corpus <- tm_map(corpus, function (x) {
     gsub("\\s*(?<!\\B|-)\\d+(?!\\B|-)\\s*", "", x, perl = TRUE)})
+  corpus <- tm_map(corpus, PlainTextDocument)
   return (corpus)
 }
 
