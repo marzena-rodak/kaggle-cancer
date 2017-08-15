@@ -29,9 +29,9 @@ removeReferences <-function(x){
   x <- gsub('[(][^()]+[)]','',x) #remove everything in parenthesis ()
   x <- gsub('[[][^()]+[]]','',x) #remove everything in parenthesis []
   x <- gsub('[{][^()]+[}]','',x) #remove everything in parenthesis {}
-  x <- gsub('[A-z0-9]+[)]','',x)
-  x <- gsub('[A-z0-9]+[]]','',x)
-  x <- gsub('[A-z0-9]+[}]','',x)
+  # x <- gsub('[A-z0-9]+[)]','',x)
+  # x <- gsub('[A-z0-9]+[]]','',x)
+  # x <- gsub('[A-z0-9]+[}]','',x)
   return(x)
 }
 
@@ -115,4 +115,36 @@ LogLossSummary <- function (data, lev = NULL, model = NULL) {
   names(out) <- c("Accuracy", "Kappa", "LogLoss")
   if (any(is.nan(out))) out[is.nan(out)] <- NA
   out
+}
+
+
+processCorpus <- function (corpus) {
+  corpus <- tm_map(corpus, stripWhitespace)
+  corpus <- tm_map(corpus, content_transformer(tolower))
+  corpus <- tm_map(corpus, stemDocument, language="english")
+  corpus <- tm_map(corpus, removePunctuation, preserve_intra_word_dashes = TRUE)
+  corpus <- tm_map(corpus, removeWords, stopwords("english")) 
+  corpus <- tm_map(corpus, function (x) {
+    gsub("\\s*(?<!\\B|-)\\d+(?!\\B|-)\\s*", "", x, perl = TRUE)})
+  return (corpus)
+}
+
+getDictionary <- function (filePath) {
+  if (is.null(filePath)) return(NULL)
+  ret <- do.call(rbind, strsplit(readLines(filePath), "\t", fixed = TRUE))
+  ret <- setNames(data.table(ret, stringsAsFactors = FALSE), 
+                  c("code", "concept_name", "parents", 
+                    "synonyms", "definition", "display_name",
+                    "concept_status", "semantic_type"))
+  
+  corpus <- Corpus(VectorSource(gsub("\\|", " ", ret$synonyms)))
+  corpus <- processCorpus (corpus)
+  
+  terms <- DocumentTermMatrix(
+    corpus, 
+    control = list(
+      minWordLength = 3,
+      weighting = function(x) weightTfIdf(x, normalize = FALSE)))
+  
+  return (as.vector(terms$dimnames$Terms))
 }

@@ -163,3 +163,8 @@ train$is_exon <- ifelse(grepl("exon", train$Variation, ignore.case = T), 1, 0)
 train$First_Var<-NA
 r <-regexpr('[A-Z0-9]{2,}', train$Variation)
 train$First_Var[r!=-1] <- regmatches(train$Variation,r)
+
+
+# NCI Thesaurus -----------------------------------------------------------
+
+medDico <- getDictionary("Data/Thesaurus.txt")
