@@ -174,3 +174,8 @@ gene_txt <- preprocess_Corpus(gene_doc_list)
 var_txt <- preprocess_Corpus(var_doc_list)
 
 #Build even smaller dtm using NCLt dictionary
+
+
+# NCI Thesaurus -----------------------------------------------------------
+
+medDico <- getDictionary("Data/Thesaurus.txt")
