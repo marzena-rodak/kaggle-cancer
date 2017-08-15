@@ -35,15 +35,7 @@ levels(train$Variation)
 index <- createDataPartition(train$Class, times = 1, p=0.1, list = FALSE)
 data <- train[index,]
 
-txt <- Corpus(VectorSource(data$Text))
-txt <- tm_map(txt, stripWhitespace)
-txt <- tm_map(txt, content_transformer(tolower))
-txt <- tm_map(txt, removeReferences)
-txt <- tm_map(txt, removeNumbers2)
-txt <- tm_map(txt, removePunctuation, preserve_intra_word_dashes = TRUE)
-txt <- tm_map(txt, removeWords, c(stopwords("english"),'figure','fig','table','plot','chart','graph'))
-txt <- tm_map(txt, stripWhitespace)
-txt <- tm_map(txt, stemDocument, language="english")
+txt <- preprocess_Corpus(data$Text)
 dtm <- DocumentTermMatrix(txt, control = list(weighting = weightTfIdf))
 dtm <- removeSparseTerms(dtm, 0.95)
 #data_dtm <- cbind(data, as.matrix(dtm))
@@ -163,3 +155,22 @@ train$is_exon <- ifelse(grepl("exon", train$Variation, ignore.case = T), 1, 0)
 train$First_Var<-NA
 r <-regexpr('[A-Z0-9]{2,}', train$Variation)
 train$First_Var[r!=-1] <- regmatches(train$Variation,r)
+
+#Building dtm separetly from smaller number of sentences
+
+gene_doc_list <- list()
+var_doc_list <- list()
+
+for(p in 1:nrow(train)){
+  text <- train$Text[p]
+  sent <- convert_text_to_sentences(text)
+  sent_gene <- sentence_with_keyword(sent,train$Gene[p])
+  sent_var <- sentence_with_keyword(sent, train$First_Var[p])
+  gene_doc_list[p] <- paste(sent_gene, collapse=" ")
+  var_doc_list[p] <- paste(sent_var, collapse=" ")
+}
+
+gene_txt <- preprocess_Corpus(gene_doc_list)
+var_txt <- preprocess_Corpus(var_doc_list)
+
+#Build even smaller dtm using NCLt dictionary

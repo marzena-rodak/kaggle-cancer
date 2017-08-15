@@ -29,10 +29,22 @@ removeReferences <-function(x){
   x <- gsub('[(][^()]+[)]','',x) #remove everything in parenthesis ()
   x <- gsub('[[][^()]+[]]','',x) #remove everything in parenthesis []
   x <- gsub('[{][^()]+[}]','',x) #remove everything in parenthesis {}
-  x <- gsub('[A-z0-9]+[)]','',x)
-  x <- gsub('[A-z0-9]+[]]','',x)
-  x <- gsub('[A-z0-9]+[}]','',x)
   return(x)
+}
+
+preprocess_Corpus <-function(txt){
+  txt <- Corpus(VectorSource(txt))
+  txt <- tm_map(txt, stripWhitespace)
+  txt <- tm_map(txt, content_transformer(tolower))
+  txt <- tm_map(txt, removeReferences)
+  txt <- tm_map(txt, removeReferences)
+  txt <- tm_map(txt, removeReferences)
+  txt <- tm_map(txt, removeNumbers2)
+  txt <- tm_map(txt, removePunctuation, preserve_intra_word_dashes = TRUE)
+  txt <- tm_map(txt, removeWords, c(stopwords("english"),'figure','fig','table','plot','chart','graph'))
+  txt <- tm_map(txt, stripWhitespace)
+  txt <- tm_map(txt, stemDocument, language="english")
+  return(txt)
 }
 
 catch_mutation_grams <- function(sentence){
@@ -40,31 +52,21 @@ catch_mutation_grams <- function(sentence){
   return(x)
 }
 
-sentence_with_variation <- function(sent_list,var){
+sentence_with_keyword <- function(sent_list,keyword){
   
-  sent_var <- list()
+  sent_keyword <- list()
   
-  for(k in 1:length(sent_list)){
-    if(grepl(var,sent_list[[k]])){
-      sent_var <- c(sent_var,sent_list[[k]])
+  if( !is.na(keyword) ){
+    for(k in 1:length(sent_list)){
+      if(grepl(keyword,sent_list[[k]])){
+        sent_keyword <- c(sent_keyword,sent_list[[k]])
+      }
     }
   }
   
-  return(sent_var)
+  return(sent_keyword)
 }
 
-sentence_with_mutat <- function(sent_list){
-  
-  sent_mut <- list()
-  
-  for(k in 1:length(sent_list)){
-    if(grepl('\\s(mutat)',sent_list[[k]])){
-      sent_mut <- c(sent_mut,sent_list[[k]])
-    }
-  }
-  
-  return(sent_mut)
-}
 
 convert_text_to_sentences <- function(text, lang = "en") {
   # Ensure there are spaces after each dot.
@@ -84,6 +86,21 @@ convert_text_to_sentences <- function(text, lang = "en") {
   
   # return sentences
   return(sentences)
+}
+
+
+
+sentence_with_mutat <- function(sent_list){
+  
+  sent_mut <- list()
+  
+  for(k in 1:length(sent_list)){
+    if(grepl('\\s(mutat)',sent_list[[k]])){
+      sent_mut <- c(sent_mut,sent_list[[k]])
+    }
+  }
+  
+  return(sent_mut)
 }
 
 LogLossSummary <- function (data, lev = NULL, model = NULL) {
