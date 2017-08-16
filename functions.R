@@ -20,6 +20,10 @@ read <- function(fileName) {
   return(dataframe[,c(2,1)])
 }
 
+BigramTokenizer <- function(x) {RWeka::NGramTokenizer(x, RWeka::Weka_control(min=2, max=2))}
+ThreegramTokenizer <- function(x) {RWeka::NGramTokenizer(x, RWeka::Weka_control(min=3, max=3))}
+FourgramTokenizer <- function(x) {RWeka::NGramTokenizer(x, RWeka::Weka_control(min=4, max=4))}
+
 removeNumbers2 <-function(x){
   x <- gsub('(^|\\s)\\d+(\\s|\\.|$)',' ',x)
   return(x)
@@ -168,4 +172,13 @@ getDictionary <- function (filePath) {
       weighting = function(x) weightTfIdf(x, normalize = FALSE)))
   
   return (as.vector(terms$dimnames$Terms))
+}
+
+prep_container <- function(dtm, label){
+  N <- length(label)
+  train_cont <- create_container(dtm, labels = label, trainSize = 1:N, virgin = FALSE)
+  train_mat <- as.matrix(train_cont@training_matrix)
+  colnames(train_mat) <- dtm$dimnames[[2]]
+  train_lab <- as.factor(paste0("c", label))
+  return(list(X = train_mat, y = train_lab))
 }
